@@ -1,10 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, filedialog
-import heapq #для метода A*
-#import time # библиотека для работы с времинем, например как в светофоре, но тут не использую
-# import sys #что такое sys?
 
-# Цвета
 COLOR_WALL = "#333333"
 COLOR_PATH = "#ffffff"
 COLOR_START = "#4CAF50"    # Зелёный
@@ -36,7 +32,7 @@ class MazeSolverApp:
         load_btn = tk.Button(top_frame, text="Загрузить лабиринт", command=self.load_maze)
         load_btn.pack(side=tk.LEFT, padx=5)
 
-        solve_btn = tk.Button(top_frame, text="Решить", command=self.solve_and_animate)
+        solve_btn = tk.Button(top_frame, text="Решить (DFS)", command=self.solve_and_animate)
         solve_btn.pack(side=tk.LEFT, padx=5)
 
         self.status_label = tk.Label(top_frame, text="Загрузите файл с лабиринтом", fg="gray")
@@ -117,7 +113,7 @@ class MazeSolverApp:
 
                 self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="#ccc")
 
-        #прорисовываю старт и выход поверх
+        # Прорисовываю старт и выход поверх
         self.draw_cell(self.start, COLOR_START, text="S")
         self.draw_cell(self.exit, COLOR_EXIT, text="E")
 
@@ -134,24 +130,24 @@ class MazeSolverApp:
                 text=text, fill="white", font=("Arial", 10, "bold")
             )
 
-    def heuristic(self, a, b):
-        return abs(a[0] - b[0]) + abs(a[1] - b[1])
-
     def solve_maze(self):
         start = self.start
         goal = self.exit
         rows, cols = len(self.maze), len(self.maze[0])
 
-        open_set = []
-        heapq.heappush(open_set, (0, start))
+        stack = [start]
         came_from = {}
-        g_score = {start: 0}
         visited = []
+        visited_set = set()
 
-        directions = [(0,1), (1,0), (0,-1), (-1,0)]
+        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
-        while open_set:
-            current = heapq.heappop(open_set)[1]
+        while stack:
+            current = stack.pop()
+            if current in visited_set:
+                continue
+
+            visited_set.add(current)
             visited.append(current)
 
             if current == goal:
@@ -162,22 +158,18 @@ class MazeSolverApp:
                     current = came_from[current]
                 path.reverse()
                 return path, visited
-
-            for dx, dy in directions:
+                
+            for dx, dy in reversed(directions):
                 neighbor = (current[0] + dx, current[1] + dy)
                 if not (0 <= neighbor[0] < rows and 0 <= neighbor[1] < cols):
                     continue
                 if self.maze[neighbor[0]][neighbor[1]] == 1:
                     continue
-
-                tentative_g = g_score[current] + 1
-                if neighbor in g_score and tentative_g >= g_score[neighbor]:
+                if neighbor in visited_set:
                     continue
 
                 came_from[neighbor] = current
-                g_score[neighbor] = tentative_g
-                f_score = tentative_g + self.heuristic(neighbor, goal)
-                heapq.heappush(open_set, (f_score, neighbor))
+                stack.append(neighbor)
 
         return None, visited  #Путь не найден
 
@@ -191,13 +183,13 @@ class MazeSolverApp:
 
         path, visited = self.solve_maze()
         if path is None:
-            messagebox.showinfo("Результат", "Путь к выходу не найден!")
+            messagebox.showinfo("Результат", "Выход не найден!")
             return
 
         self.path = path
         self.visited_order = visited
         self.animation_running = True
-        self.status_label.config(text="Тараканчик ищет выход...", fg="blue")
+        self.status_label.config(text="Тараканчик ползёт по лабиринту...", fg="blue")
         self.animate_visited()
 
     def animate_visited(self, idx=0):
@@ -209,11 +201,10 @@ class MazeSolverApp:
         if pos != self.start and pos != self.exit:
             self.draw_cell(pos, COLOR_VISITED)
 
-        self.root.after(50, self.animate_visited, idx + 1)  #50 мс между шагами вроде подходят
+        self.root.after(50, self.animate_visited, idx + 1)
 
     def animate_path(self, idx=0):
         if idx >= len(self.path) or not self.animation_running:
-            
             for pos in self.path:
                 if pos != self.exit:
                     self.draw_cell(pos, COLOR_PATH_FOUND)
