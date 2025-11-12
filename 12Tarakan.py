@@ -32,7 +32,7 @@ class MazeSolverApp:
         load_btn = tk.Button(top_frame, text="Загрузить лабиринт", command=self.load_maze)
         load_btn.pack(side=tk.LEFT, padx=5)
 
-        solve_btn = tk.Button(top_frame, text="Решить (DFS)", command=self.solve_and_animate)
+        solve_btn = tk.Button(top_frame, text="Решить", command=self.solve_and_animate)
         solve_btn.pack(side=tk.LEFT, padx=5)
 
         self.status_label = tk.Label(top_frame, text="Загрузите файл с лабиринтом", fg="gray")
@@ -222,3 +222,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = MazeSolverApp(root)
     root.mainloop()
+
